@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "render",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "SimpleCameraInterpolator.render",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-s",
+                "data/truck",
+                "-d",
+                "output/truck",
+                "-i",
+                "30000",
+                "--load_camera",
+                "output/truck/cameras.json",
+            ]
+        },
+    ]
+}
