@@ -75,7 +75,7 @@ def smooth(cameras: List[SimpleCamera], window_size: int = 3) -> List[SimpleCame
     ]
 
 
-def smooth_interpolation_dataset(dataset: CameraDataset, n: int, window_size: int = 3) -> List[SimpleCamera]:
+def smooth_interpolation(dataset: CameraDataset, n: int, window_size: int = 3) -> List[SimpleCamera]:
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd.")
     cameras = [SimpleCamera.from_camera(camera, timestamp=idx) for idx, camera in enumerate(dataset)]
