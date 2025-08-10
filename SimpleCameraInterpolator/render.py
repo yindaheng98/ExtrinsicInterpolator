@@ -8,10 +8,12 @@ import tifffile
 from gaussian_splatting import GaussianModel
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.prepare import prepare_dataset, prepare_gaussians
+from SimpleCameraInterpolator import SimpleCameraInterpolationDataset
 
 
-def prepare_rendering(sh_degree: int, source: str, device: str, trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False) -> Tuple[CameraDataset, GaussianModel]:
+def prepare_rendering(sh_degree: int, source: str, device: str, n: int, window_size: int, trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False) -> Tuple[CameraDataset, GaussianModel]:
     dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=load_depth)
+    dataset = SimpleCameraInterpolationDataset(dataset=dataset, n=n, window_size=window_size)
     gaussians = prepare_gaussians(sh_degree=sh_degree, source=source, device=device, trainable_camera=trainable_camera, load_ply=load_ply)
     return dataset, gaussians
 
@@ -40,11 +42,15 @@ if __name__ == "__main__":
     parser.add_argument("--load_camera", default=None, type=str)
     parser.add_argument("--mode", choices=["base", "camera"], default="base")
     parser.add_argument("--device", default="cuda", type=str)
+    parser.add_argument("--interp_n", required=True, type=int)
+    parser.add_argument("--interp_window_size", type=int, default=3)
     args = parser.parse_args()
     load_ply = os.path.join(args.destination, "point_cloud", "iteration_" + str(args.iteration), "point_cloud.ply")
     save = os.path.join(args.destination, "ours_{}".format(args.iteration))
     with torch.no_grad():
         dataset, gaussians = prepare_rendering(
-            sh_degree=args.sh_degree, source=args.source, device=args.device, trainable_camera=args.mode == "camera",
+            sh_degree=args.sh_degree, source=args.source, device=args.device,
+            n=args.interp_n, window_size=args.interp_window_size,
+            trainable_camera=args.mode == "camera",
             load_ply=load_ply, load_camera=args.load_camera, load_depth=True)
         rendering(dataset, gaussians, save)

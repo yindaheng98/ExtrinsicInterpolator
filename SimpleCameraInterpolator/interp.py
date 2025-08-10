@@ -1,17 +1,8 @@
 from typing import List
-import math
 import torch
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.utils import matrix_to_quaternion, quaternion_to_matrix
 from .abc import SimpleCamera
-
-
-def fov2focal(fov, pixels):
-    return pixels / (2 * math.tan(fov / 2))
-
-
-def focal2fov(focal, pixels):
-    return 2*torch.atan(pixels/(2*focal))
 
 
 def linspace_cameras(start: SimpleCamera, end: SimpleCamera, n: int) -> List[SimpleCamera]:
@@ -20,16 +11,7 @@ def linspace_cameras(start: SimpleCamera, end: SimpleCamera, n: int) -> List[Sim
     q_start, q_end = matrix_to_quaternion(start.R), matrix_to_quaternion(end.R)
     qs = q_start.unsqueeze(0) + ratio * (q_end.unsqueeze(0) - q_start.unsqueeze(0))
     Rs = quaternion_to_matrix(qs)
-    image_height = (start.image_height + ratio * (end.image_height - start.image_height)).int()
-    image_width = (start.image_width + ratio * (end.image_width - start.image_width)).int()
-    focal_x = fov2focal(start.FoVx, image_width) + ratio * (fov2focal(end.FoVx, image_width) - fov2focal(start.FoVx, image_width))
-    focal_y = fov2focal(start.FoVy, image_height) + ratio * (fov2focal(end.FoVy, image_height) - fov2focal(start.FoVy, image_height))
-    FoVx = focal2fov(focal_x, image_width)
-    FoVy = focal2fov(focal_y, image_height)
-    return [
-        SimpleCamera(R=R, T=T, FoVx=FoVx.item(), FoVy=FoVy.item(), image_height=ih.item(), image_width=iw.item())
-        for R, T, FoVx, FoVy, ih, iw in zip(Rs, Ts, FoVx, FoVy, image_height, image_width)
-    ]
+    return [SimpleCamera(R=R, T=T) for R, T in zip(Rs, Ts)]
 
 
 def sort_cameras(cameras: List[SimpleCamera]) -> List[SimpleCamera]:
@@ -68,15 +50,16 @@ def smooth_1d(inputs: torch.Tensor, window_size: int = 3) -> torch.Tensor:
 def smooth(cameras: List[SimpleCamera], window_size: int = 3) -> List[SimpleCamera]:
     Ts = smooth_1d(torch.stack([camera.T for camera in cameras]), window_size=window_size)
     Rs = quaternion_to_matrix(smooth_1d(matrix_to_quaternion(torch.stack([camera.R for camera in cameras])), window_size=window_size))
-    Ks = smooth_1d(torch.stack([camera.K for camera in cameras]), window_size=window_size)
     return [
-        cameras[i]._replace(R=R, T=T, K=K)
-        for i, (R, T, K) in enumerate(zip(Rs, Ts, Ks))
+        cameras[i]._replace(R=R, T=T)
+        for i, (R, T) in enumerate(zip(Rs, Ts))
     ]
 
 
 def smooth_interpolation(dataset: CameraDataset, n: int, window_size: int = 3) -> List[SimpleCamera]:
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd.")
-    cameras = [SimpleCamera.from_camera(camera, timestamp=idx) for idx, camera in enumerate(dataset)]
-    return smooth(interpolation(cameras, n + window_size // 2*2), window_size=window_size)
+    cameras = [SimpleCamera.from_camera(camera) for camera in dataset]
+    if len(cameras) == (n + window_size // 2 * 2):
+        return smooth(cameras, window_size=window_size)
+    return smooth(interpolation(cameras, n + window_size // 2 * 2), window_size=window_size)

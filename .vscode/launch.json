@@ -17,6 +17,10 @@
                 "30000",
                 "--load_camera",
                 "output/truck/cameras.json",
+                "--interp_n",
+                "300",
+                "--interp_window_size",
+                "3",
             ]
         },
     ]
