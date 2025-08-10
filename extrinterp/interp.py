@@ -1,6 +1,5 @@
 from typing import List
 import torch
-from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.utils import matrix_to_quaternion, quaternion_to_matrix
 from .abc import Extrinsic
 
@@ -56,7 +55,7 @@ def smooth(cameras: List[Extrinsic], window_size: int = 3) -> List[Extrinsic]:
     ]
 
 
-def smooth_interpolation(dataset: CameraDataset, n: int, window_size: int = 3) -> List[Extrinsic]:
+def smooth_interpolation(dataset: List[Extrinsic], n: int, window_size: int = 3) -> List[Extrinsic]:
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd.")
     cameras = [Extrinsic.from_camera(camera) for camera in dataset]
