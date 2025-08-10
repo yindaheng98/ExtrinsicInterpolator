@@ -5,12 +5,12 @@ from gaussian_splatting import Camera
 from gaussian_splatting.camera import build_camera
 
 
-class Extrinsics(NamedTuple):
+class Extrinsic(NamedTuple):
     R: torch.Tensor
     T: torch.Tensor
 
     @classmethod
-    def from_camera(cls, camera: Camera) -> 'Extrinsics':
+    def from_camera(cls, camera: Camera) -> 'Extrinsic':
         return cls(
             R=camera.R,
             T=camera.T,

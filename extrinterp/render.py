@@ -8,7 +8,7 @@ import tifffile
 from gaussian_splatting import GaussianModel
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.prepare import prepare_dataset, prepare_gaussians
-from extrinterp import ExtrinsicsInterpolationDataset
+from extrinterp import ExtrinsicInterpolationDataset
 
 
 def prepare_rendering(
@@ -24,7 +24,7 @@ def prepare_rendering(
             FoVx=dataset[i].FoVx, FoVy=dataset[i].FoVy)
     elif not isinstance(use_intrinsics, dict):
         raise ValueError("Invalid use_intrinsics format")
-    dataset = ExtrinsicsInterpolationDataset(dataset=dataset, n=n, window_size=window_size, **use_intrinsics)
+    dataset = ExtrinsicInterpolationDataset(dataset=dataset, n=n, window_size=window_size, **use_intrinsics)
     gaussians = prepare_gaussians(sh_degree=sh_degree, source=source, device=device, trainable_camera=trainable_camera, load_ply=load_ply)
     return dataset, gaussians
 

@@ -1,3 +1,3 @@
-from .abc import Extrinsics
+from .abc import Extrinsic
 from .interp import interpolation, smooth_interpolation
-from .dataset import ExtrinsicsInterpolator, ExtrinsicsInterpolationDataset
+from .dataset import ExtrinsicInterpolator, ExtrinsicInterpolationDataset

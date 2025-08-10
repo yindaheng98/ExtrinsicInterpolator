@@ -2,19 +2,19 @@ from typing import List
 import torch
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.utils import matrix_to_quaternion, quaternion_to_matrix
-from .abc import Extrinsics
+from .abc import Extrinsic
 
 
-def linspace_cameras(start: Extrinsics, end: Extrinsics, n: int) -> List[Extrinsics]:
+def linspace_cameras(start: Extrinsic, end: Extrinsic, n: int) -> List[Extrinsic]:
     ratio = torch.linspace(0, 1, n, device=start.R.device).unsqueeze(-1)
     Ts = start.T.unsqueeze(0) + ratio * (end.T.unsqueeze(0) - start.T.unsqueeze(0))
     q_start, q_end = matrix_to_quaternion(start.R), matrix_to_quaternion(end.R)
     qs = q_start.unsqueeze(0) + ratio * (q_end.unsqueeze(0) - q_start.unsqueeze(0))
     Rs = quaternion_to_matrix(qs)
-    return [Extrinsics(R=R, T=T) for R, T in zip(Rs, Ts)]
+    return [Extrinsic(R=R, T=T) for R, T in zip(Rs, Ts)]
 
 
-def sort_cameras(cameras: List[Extrinsics]) -> List[Extrinsics]:
+def sort_cameras(cameras: List[Extrinsic]) -> List[Extrinsic]:
     Ts = torch.stack([camera.T for camera in cameras])
     distances = torch.cdist(Ts, Ts)
     next_idx = distances.mean(0).argmax()
@@ -26,7 +26,7 @@ def sort_cameras(cameras: List[Extrinsics]) -> List[Extrinsics]:
     return sorted_cameras
 
 
-def interpolation(cameras: List[Extrinsics], n: int) -> List[Extrinsics]:
+def interpolation(cameras: List[Extrinsic], n: int) -> List[Extrinsic]:
     cameras = sort_cameras(cameras)
     new_cameras = []
     for i in range(len(cameras) - 1):
@@ -47,7 +47,7 @@ def smooth_1d(inputs: torch.Tensor, window_size: int = 3) -> torch.Tensor:
     return outputs.squeeze(1).T.view(shape[0] - window_size//2*2, *shape[1:]).contiguous()
 
 
-def smooth(cameras: List[Extrinsics], window_size: int = 3) -> List[Extrinsics]:
+def smooth(cameras: List[Extrinsic], window_size: int = 3) -> List[Extrinsic]:
     Ts = smooth_1d(torch.stack([camera.T for camera in cameras]), window_size=window_size)
     Rs = quaternion_to_matrix(smooth_1d(matrix_to_quaternion(torch.stack([camera.R for camera in cameras])), window_size=window_size))
     return [
@@ -56,10 +56,10 @@ def smooth(cameras: List[Extrinsics], window_size: int = 3) -> List[Extrinsics]:
     ]
 
 
-def smooth_interpolation(dataset: CameraDataset, n: int, window_size: int = 3) -> List[Extrinsics]:
+def smooth_interpolation(dataset: CameraDataset, n: int, window_size: int = 3) -> List[Extrinsic]:
     if window_size % 2 == 0:
         raise ValueError("Window size must be odd.")
-    cameras = [Extrinsics.from_camera(camera) for camera in dataset]
+    cameras = [Extrinsic.from_camera(camera) for camera in dataset]
     if len(cameras) == (n + window_size // 2 * 2):
         return smooth(cameras, window_size=window_size)
     return smooth(interpolation(cameras, n + window_size // 2 * 2), window_size=window_size)
