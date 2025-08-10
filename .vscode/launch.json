@@ -21,6 +21,8 @@
                 "300",
                 "--interp_window_size",
                 "3",
+                "--use_intrinsics",
+                "dict(image_width=1600,FoVx=1.4749,image_height=1200,FoVy=1.1990)",
             ]
         },
     ]

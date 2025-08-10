@@ -11,9 +11,20 @@ from gaussian_splatting.prepare import prepare_dataset, prepare_gaussians
 from extrinterp import ExtrinsicsInterpolationDataset
 
 
-def prepare_rendering(sh_degree: int, source: str, device: str, n: int, window_size: int, trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False) -> Tuple[CameraDataset, GaussianModel]:
+def prepare_rendering(
+        sh_degree: int, source: str, device: str, n: int, window_size: int,
+        trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False,
+        use_intrinsics: int | dict = 0
+) -> Tuple[CameraDataset, GaussianModel]:
     dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=load_depth)
-    dataset = ExtrinsicsInterpolationDataset(dataset=dataset, n=n, window_size=window_size)
+    if isinstance(use_intrinsics, int):
+        i = use_intrinsics
+        use_intrinsics = dict(
+            image_height=dataset[i].image_height, image_width=dataset[i].image_width,
+            FoVx=dataset[i].FoVx, FoVy=dataset[i].FoVy)
+    elif not isinstance(use_intrinsics, dict):
+        raise ValueError("Invalid use_intrinsics format")
+    dataset = ExtrinsicsInterpolationDataset(dataset=dataset, n=n, window_size=window_size, **use_intrinsics)
     gaussians = prepare_gaussians(sh_degree=sh_degree, source=source, device=device, trainable_camera=trainable_camera, load_ply=load_ply)
     return dataset, gaussians
 
@@ -44,6 +55,7 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("--interp_n", required=True, type=int)
     parser.add_argument("--interp_window_size", type=int, default=3)
+    parser.add_argument("--use_intrinsics", type=str, default="0", help="Use intrinsics for rendering, can be an integer index or a dict with keys: image_height, image_width, FoVx, FoVy")
     args = parser.parse_args()
     load_ply = os.path.join(args.destination, "point_cloud", "iteration_" + str(args.iteration), "point_cloud.ply")
     save = os.path.join(args.destination, "ours_{}".format(args.iteration))
@@ -52,5 +64,7 @@ if __name__ == "__main__":
             sh_degree=args.sh_degree, source=args.source, device=args.device,
             n=args.interp_n, window_size=args.interp_window_size,
             trainable_camera=args.mode == "camera",
-            load_ply=load_ply, load_camera=args.load_camera, load_depth=True)
+            load_ply=load_ply, load_camera=args.load_camera, load_depth=True,
+            use_intrinsics=eval(args.use_intrinsics)
+        )
         rendering(dataset, gaussians, save)
