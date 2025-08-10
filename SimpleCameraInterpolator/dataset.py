@@ -2,11 +2,11 @@ import torch
 from torch.utils.data import Dataset
 from gaussian_splatting import Camera
 from gaussian_splatting.dataset import CameraDataset
-from .abc import SimpleCamera
+from .abc import Extrinsics
 from .interp import smooth_interpolation
 
 
-class SimpleCameraInterpolator(Dataset):
+class ExtrinsicsInterpolator(Dataset):
 
     def __init__(self, dataset: CameraDataset, n: int, window_size: int = 3):
         self.cameras = smooth_interpolation(dataset=dataset, n=n, window_size=window_size)
@@ -14,7 +14,7 @@ class SimpleCameraInterpolator(Dataset):
     def __len__(self):
         return len(self.cameras)
 
-    def __getitem__(self, idx) -> SimpleCamera:
+    def __getitem__(self, idx) -> Extrinsics:
         return self.cameras[idx]
 
     def to(self, device):
@@ -22,13 +22,13 @@ class SimpleCameraInterpolator(Dataset):
         return self
 
 
-class SimpleCameraInterpolationDataset(CameraDataset):
+class ExtrinsicsInterpolationDataset(CameraDataset):
     def __init__(
         self,
             dataset: CameraDataset, n: int, window_size: int = 3,
             image_height: int = 1000, image_width: int = 1000,
             FoVx: float = 90.0*torch.pi/180, FoVy: float = 90.0*torch.pi/180):
-        self.cameras = SimpleCameraInterpolator(dataset=dataset, n=n, window_size=window_size)
+        self.cameras = ExtrinsicsInterpolator(dataset=dataset, n=n, window_size=window_size)
         self.image_height = image_height
         self.image_width = image_width
         self.FoVx = FoVx
