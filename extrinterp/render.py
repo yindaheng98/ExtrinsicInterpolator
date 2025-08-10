@@ -8,7 +8,7 @@ import tifffile
 from gaussian_splatting import GaussianModel
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.prepare import prepare_dataset, prepare_gaussians
-from SimpleCameraInterpolator import ExtrinsicsInterpolationDataset
+from extrinterp import ExtrinsicsInterpolationDataset
 
 
 def prepare_rendering(sh_degree: int, source: str, device: str, n: int, window_size: int, trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False) -> Tuple[CameraDataset, GaussianModel]:

@@ -1,4 +1,4 @@
-# Simple Camera Interpolator
+# Extrinsics Interpolator
 
 Just a simple camera interpolator for [Gaussian Splatting](https://github.com/yindaheng98/gaussian-splatting) framework.
 

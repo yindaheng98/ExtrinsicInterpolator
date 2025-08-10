@@ -5,7 +5,7 @@
             "name": "render",
             "type": "debugpy",
             "request": "launch",
-            "module": "SimpleCameraInterpolator.render",
+            "module": "extrinterp.render",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
