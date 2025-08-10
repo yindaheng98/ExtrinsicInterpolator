@@ -10,7 +10,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "yindaheng98", email = "yindaheng98@gmail.com" }]
 classifiers = ["Programming Language :: Python :: 3"]
-urls = { Homepage = "https://github.com/yindaheng98/DIBR-Q" }
+urls = { Homepage = "https://github.com/yindaheng98/ExtrinsicInterpolator" }
 requires-python = ">=3"
 dependencies = ["gaussian-splatting"]
 
