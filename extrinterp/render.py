@@ -13,10 +13,10 @@ from extrinterp import ExtrinsicInterpolationDataset
 
 def prepare_rendering(
         sh_degree: int, source: str, device: str, n: int, window_size: int,
-        trainable_camera: bool = False, load_ply: str = None, load_camera: str = None, load_depth=False,
+        trainable_camera: bool = False, load_ply: str = None, load_camera: str = None,
         use_intrinsics: int | dict = 0
 ) -> Tuple[CameraDataset, GaussianModel]:
-    dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=load_depth)
+    dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=False)
     if isinstance(use_intrinsics, int):
         i = use_intrinsics
         use_intrinsics = dict(
@@ -64,7 +64,7 @@ if __name__ == "__main__":
             sh_degree=args.sh_degree, source=args.source, device=args.device,
             n=args.interp_n, window_size=args.interp_window_size,
             trainable_camera=args.mode == "camera",
-            load_ply=load_ply, load_camera=args.load_camera, load_depth=True,
+            load_ply=load_ply, load_camera=args.load_camera,
             use_intrinsics=eval(args.use_intrinsics)
         )
         rendering(dataset, gaussians, save)
