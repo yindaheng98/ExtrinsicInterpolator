@@ -37,7 +37,7 @@ class Extrinsic(NamedTuple):
         )
 
     def to(self, device):
-        return Camera(
+        return Extrinsic(
             R=self.R.to(device),
             T=self.T.to(device),
         )
