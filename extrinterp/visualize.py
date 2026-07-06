@@ -17,12 +17,7 @@ def prepare_visualization(
 
 
 def visualize(extrinsics: List[Extrinsic]) -> None:
-    import matplotlib.pyplot as plt
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    plot_interpolator_output(extrinsics, ax)
-    plt.show()
+    plot_interpolator_output(extrinsics)
 
 
 if __name__ == "__main__":

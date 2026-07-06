@@ -1,85 +1,52 @@
-from typing import Sequence, Tuple
+from typing import List, Sequence
 
+import open3d as o3d
 import torch
 
 from ..abc import Extrinsic
 
 
-RGB_AXIS_COLORS = ("tab:red", "tab:green", "tab:blue")
-
-
 def plot_extrinsic(
     extrinsic: Extrinsic,
-    ax,
+    geometries: List,
     axis_length: float = 1.0,
-    axis_colors: Tuple[str, str, str] = RGB_AXIS_COLORS,
 ):
-    """Plot one extrinsic on an existing matplotlib 3D axes."""
-    position = extrinsic.T.detach().cpu().reshape(-1)[:3]
-    rotation = extrinsic.R.detach().cpu()
+    """Add one extrinsic coordinate frame to an Open3D geometry list."""
+    transform = torch.eye(4, dtype=torch.float64)
+    transform[:3, :3] = extrinsic.R.detach().cpu().to(dtype=torch.float64)
+    transform[:3, 3] = extrinsic.T.detach().cpu().reshape(-1)[:3].to(dtype=torch.float64)
 
-    ax.scatter(
-        [position[0].item()],
-        [position[1].item()],
-        [position[2].item()],
-        color="black",
-    )
-    for axis_index, color in enumerate(axis_colors):
-        direction = rotation[:, axis_index].reshape(-1)[:3].mul(axis_length)
-        ax.quiver(
-            position[0].item(),
-            position[1].item(),
-            position[2].item(),
-            direction[0].item(),
-            direction[1].item(),
-            direction[2].item(),
-            color=color,
-        )
-
-    return ax
+    frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=axis_length)
+    frame.transform(transform.numpy())
+    geometries.append(frame)
+    return geometries
 
 
 def plot_extrinsics(
     extrinsics: Sequence[Extrinsic],
-    ax,
-    axis_colors: Tuple[str, str, str] = RGB_AXIS_COLORS,
 ):
-    """Plot multiple extrinsics and their translation trajectory."""
+    """Show multiple extrinsics and their translation trajectory with Open3D."""
     extrinsics = list(extrinsics)
     positions = torch.stack([
         extrinsic.T.detach().cpu().reshape(-1)[:3]
         for extrinsic in extrinsics
-    ])
+    ]).to(dtype=torch.float64)
     ranges = positions.max(dim=0).values - positions.min(dim=0).values
     axis_length = max(ranges.max().item(), 1.0) * 0.08
+    geometries = []
 
-    ax.plot(
-        positions[:, 0].tolist(),
-        positions[:, 1].tolist(),
-        positions[:, 2].tolist(),
-        color="tab:gray",
-        linewidth=1.5,
-        marker="o",
-        markersize=3,
-    )
+    trajectory = o3d.geometry.LineSet()
+    trajectory.points = o3d.utility.Vector3dVector(positions.numpy())
+    lines = [[idx, idx + 1] for idx in range(len(extrinsics) - 1)]
+    trajectory.lines = o3d.utility.Vector2iVector(lines)
+    trajectory.colors = o3d.utility.Vector3dVector([[0.5, 0.5, 0.5] for _ in lines])
+    geometries.append(trajectory)
     for extrinsic in extrinsics:
         plot_extrinsic(
             extrinsic,
-            ax,
+            geometries,
             axis_length=axis_length,
-            axis_colors=axis_colors,
         )
 
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_zlabel("z")
-    mins = positions.min(dim=0).values
-    maxs = positions.max(dim=0).values
-    centers = (mins + maxs).div(2)
-    radius = max((maxs - mins).max().item() / 2, 1.0)
-    ax.set_xlim(centers[0].item() - radius, centers[0].item() + radius)
-    ax.set_ylim(centers[1].item() - radius, centers[1].item() + radius)
-    ax.set_zlim(centers[2].item() - radius, centers[2].item() + radius)
-    ax.set_box_aspect((1, 1, 1))
-
-    return ax
+    o3d.visualization.draw_geometries(geometries)
+    return geometries
