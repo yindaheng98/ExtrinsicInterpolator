@@ -35,9 +35,6 @@ class KalmanExtrinsicPredictor(AbstractExtrinsicPredictor):
             ) * self.initial_covariance
             return
 
-        assert self.covariance is not None, RuntimeError("Kalman covariance is not initialized.")
-        self.state = self.state.to(device=observation.device, dtype=observation.dtype)
-        self.covariance = self.covariance.to(device=observation.device, dtype=observation.dtype)
         predicted_state, predicted_covariance = self.predict_state(self.state, self.covariance)
         self.state, self.covariance = self.update_state(
             predicted_state,
@@ -47,7 +44,6 @@ class KalmanExtrinsicPredictor(AbstractExtrinsicPredictor):
 
     def predict(self, n: int) -> List[Extrinsic]:
         assert self.state is not None, RuntimeError("Kalman predictor has not received any extrinsic.")
-        assert self.covariance is not None, RuntimeError("Kalman covariance is not initialized.")
         assert n >= 0, ValueError("Prediction count must be non-negative.")
         if n == 0:
             return []
@@ -133,4 +129,4 @@ class KalmanExtrinsicPredictor(AbstractExtrinsicPredictor):
 
     @staticmethod
     def normalize_quaternion(q: torch.Tensor) -> torch.Tensor:
-        return q / q.norm().clamp_min(torch.finfo(q.dtype).eps)
+        return q / q.norm()

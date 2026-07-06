@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from ..abc import Extrinsic
+from ..abc import Extrinsic, ExtrinsicDataset
 
 
 class AbstractExtrinsicPredictor(ABC):
@@ -20,7 +20,7 @@ class AbstractExtrinsicPredictor(ABC):
 
 class AbstractTrainableExtrinsicPredictor(AbstractExtrinsicPredictor):
     @abstractmethod
-    def train(self, dataset: List[List[Extrinsic]]) -> None:
+    def train(self, dataset: List[ExtrinsicDataset]) -> None:
         raise NotImplementedError
 
     @abstractmethod
