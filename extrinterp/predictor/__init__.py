@@ -1,1 +1,2 @@
 from .abc import AbstractExtrinsicPredictor, AbstractTrainableExtrinsicPredictor
+from .var import VARExtrinsicPredictor
