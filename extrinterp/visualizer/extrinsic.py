@@ -19,6 +19,46 @@ def plot_extrinsic(
     frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=axis_length)
     frame.transform(transform.numpy())
     geometries.append(frame)
+
+    body = o3d.geometry.TriangleMesh()
+    body.vertices = o3d.utility.Vector3dVector([
+        [-axis_length * 0.6, -axis_length * 0.4, axis_length],
+        [axis_length * 0.6, -axis_length * 0.4, axis_length],
+        [axis_length * 0.6, axis_length * 0.4, axis_length],
+        [-axis_length * 0.6, axis_length * 0.4, axis_length],
+    ])
+    body.triangles = o3d.utility.Vector3iVector([
+        [0, 3, 2],
+        [0, 2, 1],
+        [2, 3, 0],
+        [1, 2, 0],
+    ])
+    body.paint_uniform_color([1.0, 0.65, 0.0])
+    body.compute_vertex_normals()
+    body.transform(transform.numpy())
+    geometries.append(body)
+
+    lines = o3d.geometry.LineSet()
+    lines.points = o3d.utility.Vector3dVector([
+        [0.0, 0.0, 0.0],
+        [-axis_length * 0.6, -axis_length * 0.4, axis_length],
+        [axis_length * 0.6, -axis_length * 0.4, axis_length],
+        [axis_length * 0.6, axis_length * 0.4, axis_length],
+        [-axis_length * 0.6, axis_length * 0.4, axis_length],
+    ])
+    lines.lines = o3d.utility.Vector2iVector([
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 1],
+    ])
+    lines.colors = o3d.utility.Vector3dVector([[0.0, 0.0, 0.0] for _ in range(8)])
+    lines.transform(transform.numpy())
+    geometries.append(lines)
     return geometries
 
 
