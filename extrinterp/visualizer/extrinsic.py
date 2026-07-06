@@ -65,6 +65,9 @@ def plot_extrinsic(
 def plot_extrinsics(
     extrinsics: Sequence[Extrinsic],
     size_scale: float = 1.0,
+    quantile: float = 0.25,
+    clamp_min_scale: float = 0.01,
+    line_color: Sequence[float] = (0.5, 0.5, 0.5),
 ):
     """Build Open3D geometries for multiple extrinsics and their trajectory."""
     extrinsics = list(extrinsics)
@@ -76,14 +79,14 @@ def plot_extrinsics(
     max_range = max(ranges.max().item(), 1.0)
     spacing = (positions[1:] - positions[:-1]).norm(dim=1)
     spacing = torch.concat((spacing, torch.tensor([max_range], dtype=positions.dtype)))
-    axis_length = torch.quantile(spacing, 0.25).clamp_min(max_range * 0.01).item() * 0.5 * size_scale
+    axis_length = torch.quantile(spacing, quantile).clamp_min(max_range * clamp_min_scale).item() * size_scale
     geometries = []
 
     trajectory = o3d.geometry.LineSet()
     trajectory.points = o3d.utility.Vector3dVector(positions.numpy())
     lines = [[idx, idx + 1] for idx in range(len(extrinsics) - 1)]
     trajectory.lines = o3d.utility.Vector2iVector(lines)
-    trajectory.colors = o3d.utility.Vector3dVector([[0.5, 0.5, 0.5] for _ in lines])
+    trajectory.colors = o3d.utility.Vector3dVector([line_color for _ in lines])
     geometries.append(trajectory)
     for extrinsic in extrinsics:
         plot_extrinsic(

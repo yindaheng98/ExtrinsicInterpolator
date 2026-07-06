@@ -20,7 +20,7 @@ def prepare_visualization(
 
 
 def visualize(inputs: List[Extrinsic], outputs: List[Extrinsic]) -> None:
-    geometries = plot_extrinsics(outputs, 0.75) + plot_extrinsics(inputs, 1.5)
+    geometries = plot_extrinsics(outputs, 0.25, line_color=(0.0, 0.35, 1.0)) + plot_extrinsics(inputs, 0.5, line_color=(0.0, 0.0, 0.0))
     o3d.visualization.draw_geometries(geometries)
 
 
