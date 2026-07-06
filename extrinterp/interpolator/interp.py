@@ -1,7 +1,7 @@
 from typing import List
 import torch
 from gaussian_splatting.utils import matrix_to_quaternion, quaternion_to_matrix
-from .abc import Extrinsic
+from ..abc import Extrinsic
 
 
 def linspace_cameras(start: Extrinsic, end: Extrinsic, n: int) -> List[Extrinsic]:

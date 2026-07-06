@@ -1,5 +1,5 @@
 from gaussian_splatting.dataset import CameraDataset
-from .abc import Extrinsic, ExtrinsicDataset, Extrinsic2CameraDataset
+from ..abc import Extrinsic, ExtrinsicDataset, Extrinsic2CameraDataset
 from .interp import smooth_interpolation
 
 
