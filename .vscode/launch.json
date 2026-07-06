@@ -25,5 +25,23 @@
                 "dict(image_width=1600,FoVx=1.4749,image_height=1200,FoVy=1.1990)",
             ]
         },
+        {
+            "name": "visualize",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "extrinterp.visualize",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-s",
+                "data/truck",
+                "--load_camera",
+                "output/truck/cameras.json",
+                "--interp_n",
+                "300",
+                "--interp_window_size",
+                "3",
+            ]
+        },
     ]
 }
