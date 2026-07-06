@@ -1,1 +1,1 @@
-from .abc import AbstractExtrinsicPredictor
+from .abc import AbstractExtrinsicPredictor, AbstractTrainableExtrinsicPredictor
