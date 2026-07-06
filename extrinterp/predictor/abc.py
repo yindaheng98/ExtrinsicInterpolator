@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from os import PathLike
 from typing import List
 
 from ..abc import Extrinsic
@@ -25,9 +24,9 @@ class AbstractTrainableExtrinsicPredictor(AbstractExtrinsicPredictor):
         raise NotImplementedError
 
     @abstractmethod
-    def save(self, path: str | PathLike) -> None:
+    def save(self, path: str) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    def load(self, path: str | PathLike) -> None:
+    def load(self, path: str) -> None:
         raise NotImplementedError
