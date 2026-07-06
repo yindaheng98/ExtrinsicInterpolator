@@ -5,7 +5,7 @@
             "name": "render",
             "type": "debugpy",
             "request": "launch",
-            "module": "extrinterp.render",
+            "module": "extrinterp.renderer.interpolator",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
@@ -26,10 +26,10 @@
             ]
         },
         {
-            "name": "visualize",
+            "name": "visualize interpolator",
             "type": "debugpy",
             "request": "launch",
-            "module": "extrinterp.visualize",
+            "module": "extrinterp.visualizer.interpolator",
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": [
@@ -41,6 +41,24 @@
                 "300",
                 "--interp_window_size",
                 "3",
+            ]
+        },
+        {
+            "name": "visualize predictor",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "extrinterp.visualizer.predictor",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "args": [
+                "-s",
+                "data/truck",
+                "--load_camera",
+                "output/truck/cameras.json",
+                "--history_n",
+                "30",
+                "--predict_n",
+                "30",
             ]
         },
     ]

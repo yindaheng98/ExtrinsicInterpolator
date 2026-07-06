@@ -8,7 +8,8 @@ import tifffile
 from gaussian_splatting import GaussianModel
 from gaussian_splatting.dataset import CameraDataset
 from gaussian_splatting.prepare import prepare_dataset, prepare_gaussians
-from extrinterp import ExtrinsicInterpolationDataset
+
+from ..interpolator.dataset import ExtrinsicInterpolationDataset
 
 
 def prepare_rendering(
