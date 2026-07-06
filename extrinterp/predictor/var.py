@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import List
 
 import torch
 from gaussian_splatting.utils import matrix_to_quaternion, quaternion_to_matrix
 from statsmodels.iolib.smpickle import load_pickle
 from statsmodels.tsa.api import VAR
-from statsmodels.tsa.vector_ar.var_model import VARResultsWrapper
 
 from ..abc import Extrinsic
 from .abc import AbstractTrainableExtrinsicPredictor
@@ -27,10 +26,9 @@ def tensor_to_extrinsics(data: torch.Tensor) -> List[Extrinsic]:
 class VARExtrinsicPredictor(AbstractTrainableExtrinsicPredictor):
     def __init__(
         self,
-        model: Optional[VARResultsWrapper] = None,
         lag_order: int = 2,
     ):
-        self.model = model
+        self.model = None
         self.lag_order = lag_order
         self.history: List[Extrinsic] = []
 
