@@ -72,7 +72,10 @@ def plot_extrinsics(
         for extrinsic in extrinsics
     ]).to(dtype=torch.float64)
     ranges = positions.max(dim=0).values - positions.min(dim=0).values
-    axis_length = max(ranges.max().item(), 1.0) * 0.08
+    max_range = max(ranges.max().item(), 1.0)
+    spacing = (positions[1:] - positions[:-1]).norm(dim=1)
+    spacing = torch.concat((spacing, torch.tensor([max_range], dtype=positions.dtype)))
+    axis_length = torch.quantile(spacing, 0.25).clamp_min(max_range * 0.01).item() * 0.5
     geometries = []
 
     trajectory = o3d.geometry.LineSet()
