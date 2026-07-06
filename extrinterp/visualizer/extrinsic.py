@@ -64,8 +64,9 @@ def plot_extrinsic(
 
 def plot_extrinsics(
     extrinsics: Sequence[Extrinsic],
+    size_scale: float = 1.0,
 ):
-    """Show multiple extrinsics and their translation trajectory with Open3D."""
+    """Build Open3D geometries for multiple extrinsics and their trajectory."""
     extrinsics = list(extrinsics)
     positions = torch.stack([
         extrinsic.T.detach().cpu().reshape(-1)[:3]
@@ -75,7 +76,7 @@ def plot_extrinsics(
     max_range = max(ranges.max().item(), 1.0)
     spacing = (positions[1:] - positions[:-1]).norm(dim=1)
     spacing = torch.concat((spacing, torch.tensor([max_range], dtype=positions.dtype)))
-    axis_length = torch.quantile(spacing, 0.25).clamp_min(max_range * 0.01).item() * 0.5
+    axis_length = torch.quantile(spacing, 0.25).clamp_min(max_range * 0.01).item() * 0.5 * size_scale
     geometries = []
 
     trajectory = o3d.geometry.LineSet()
@@ -91,5 +92,4 @@ def plot_extrinsics(
             axis_length=axis_length,
         )
 
-    o3d.visualization.draw_geometries(geometries)
     return geometries

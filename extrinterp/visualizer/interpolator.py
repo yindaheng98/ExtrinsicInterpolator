@@ -1,5 +1,6 @@
 from typing import List, Sequence
 
+import open3d as o3d
 import torch
 from gaussian_splatting.prepare import prepare_dataset
 
@@ -8,23 +9,19 @@ from ..interpolator.interp import smooth_interpolation
 from .extrinsic import plot_extrinsics
 
 
-def plot_interpolator_output(
-    extrinsics: Sequence[Extrinsic],
-):
-    """Plot extrinsics returned by an interpolator."""
-    return plot_extrinsics(extrinsics)
-
-
 def prepare_visualization(
         source: str, device: str, n: int, window_size: int,
         trainable_camera: bool = False, load_camera: str = None
-) -> List[Extrinsic]:
+) -> tuple[List[Extrinsic], List[Extrinsic]]:
     dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=False)
-    return smooth_interpolation(dataset=dataset, n=n, window_size=window_size)
+    inputs = [Extrinsic.from_camera(dataset[idx]) for idx in range(len(dataset))]
+    outputs = smooth_interpolation(dataset=dataset, n=n, window_size=window_size)
+    return inputs, outputs
 
 
-def visualize(extrinsics: List[Extrinsic]) -> None:
-    plot_interpolator_output(extrinsics)
+def visualize(inputs: List[Extrinsic], outputs: List[Extrinsic]) -> None:
+    geometries = plot_extrinsics(outputs, 0.75) + plot_extrinsics(inputs, 1.5)
+    o3d.visualization.draw_geometries(geometries)
 
 
 if __name__ == "__main__":
@@ -38,10 +35,10 @@ if __name__ == "__main__":
     parser.add_argument("--interp_window_size", type=int, default=3)
     args = parser.parse_args()
     with torch.no_grad():
-        extrinsics = prepare_visualization(
+        inputs, outputs = prepare_visualization(
             source=args.source, device=args.device,
             n=args.interp_n, window_size=args.interp_window_size,
             trainable_camera=args.mode == "camera",
             load_camera=args.load_camera,
         )
-        visualize(extrinsics)
+        visualize(inputs, outputs)
