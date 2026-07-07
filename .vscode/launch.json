@@ -26,7 +26,7 @@
             ]
         },
         {
-            "name": "visualize interpolator",
+            "name": "visualize interpolation",
             "type": "debugpy",
             "request": "launch",
             "module": "extrinterp.visualizer.interpolator",
@@ -55,8 +55,8 @@
                 "data/truck",
                 "--load_camera",
                 "output/truck/cameras.json",
-                "--history_n",
-                "30",
+                "--update_interval",
+                "10",
                 "--predict_n",
                 "30",
             ]
