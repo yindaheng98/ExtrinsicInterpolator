@@ -11,14 +11,43 @@ from .abc import AbstractTrainableExtrinsicPredictor
 NORMALIZATION_EPSILON = 1e-8
 
 
+def normalize_quaternion(q: torch.Tensor) -> torch.Tensor:
+    fallback = torch.zeros_like(q)
+    fallback[..., 0] = 1
+    norm = q.norm(dim=-1, keepdim=True)
+    normalized = q / norm.clamp_min(NORMALIZATION_EPSILON)
+    valid = torch.isfinite(normalized).all(dim=-1, keepdim=True)
+    return torch.where(valid, normalized, fallback)
+
+
+def align_quaternion_sequence(qs: torch.Tensor) -> torch.Tensor:
+    qs = normalize_quaternion(qs).clone()
+    for idx in range(1, qs.shape[0]):
+        if torch.dot(qs[idx - 1], qs[idx]).item() < 0:
+            qs[idx] = -qs[idx]
+    return qs
+
+
+def normalize_extrinsic_tensor(data: torch.Tensor, reference: torch.Tensor = None) -> torch.Tensor:
+    data = data.clone()
+    q = normalize_quaternion(data[..., :4])
+    if reference is not None:
+        reference_q = normalize_quaternion(reference[..., :4]).to(device=q.device, dtype=q.dtype)
+        if torch.dot(reference_q.reshape(-1)[:4], q.reshape(-1)[:4]).item() < 0:
+            q = -q
+    data[..., :4] = q
+    return data
+
+
 def extrinsics_to_tensor(extrinsics: List[Extrinsic]) -> torch.Tensor:
     Rs = torch.stack([extrinsic.R for extrinsic in extrinsics])
     Ts = torch.stack([extrinsic.T for extrinsic in extrinsics])
-    Qs = matrix_to_quaternion(Rs)
+    Qs = align_quaternion_sequence(matrix_to_quaternion(Rs))
     return torch.concat((Qs, Ts), dim=-1)
 
 
 def tensor_to_extrinsics(data: torch.Tensor) -> List[Extrinsic]:
+    data = normalize_extrinsic_tensor(data)
     Qs = data[..., :4]
     Ts = data[..., 4:]
     Rs = quaternion_to_matrix(Qs)
@@ -42,14 +71,11 @@ def build_var_training_matrices(
     targets = []
     for idx in range(lag_order, sequence.shape[0]):
         history = sequence[idx - lag_order:idx]
-        mean, scale = sequence_mean_and_scale(history)
-        history = normalize_sequence(history, mean, scale)
-        target = normalize_sequence(sequence[idx], mean, scale)
         inputs.append(torch.concat([
             history[-lag]
             for lag in range(1, lag_order + 1)
         ], dim=0))
-        targets.append(target)
+        targets.append(sequence[idx])
     return torch.stack(inputs), torch.stack(targets)
 
 
@@ -57,6 +83,8 @@ def forecast_var_sequence(
     history: torch.Tensor,
     coefficients: torch.Tensor,
     intercept: torch.Tensor,
+    mean: torch.Tensor,
+    scale: torch.Tensor,
     steps: int,
     lag_order: int,
 ) -> torch.Tensor:
@@ -65,19 +93,21 @@ def forecast_var_sequence(
     if steps == 0:
         return torch.empty((0, history.shape[1]), device=history.device, dtype=history.dtype)
 
-    values = [history[idx] for idx in range(history.shape[0])]
+    normalized_history = normalize_sequence(history, mean, scale)
+    values = [normalized_history[idx] for idx in range(normalized_history.shape[0])]
     predictions = []
     while len(predictions) < steps:
         window = torch.stack(values[-lag_order:])
-        mean, scale = sequence_mean_and_scale(window)
-        normalized_window = normalize_sequence(window, mean, scale)
         model_input = torch.concat([
-            normalized_window[-lag]
+            window[-lag]
             for lag in range(1, lag_order + 1)
         ], dim=0)
-        normalized_prediction = intercept + model_input @ coefficients
-        prediction = normalized_prediction * scale + mean
-        values.append(prediction)
+        prediction = intercept + model_input @ coefficients
+        prediction = normalize_extrinsic_tensor(
+            prediction * scale + mean,
+            reference=values[-1] * scale + mean,
+        )
+        values.append(normalize_sequence(prediction, mean, scale))
         predictions.append(prediction)
     return torch.stack(predictions)
 
@@ -87,10 +117,14 @@ class VARModel:
         self,
         coefficients: torch.Tensor,
         intercept: torch.Tensor,
+        mean: torch.Tensor,
+        scale: torch.Tensor,
         lag_order: int,
     ):
         self.coefficients = coefficients
         self.intercept = intercept
+        self.mean = mean
+        self.scale = scale
         self.k_ar = lag_order
 
     def forecast(self, data, steps: int):
@@ -101,6 +135,8 @@ class VARModel:
             history=history,
             coefficients=self.coefficients,
             intercept=self.intercept,
+            mean=self.mean,
+            scale=self.scale,
             steps=steps,
             lag_order=self.k_ar,
         )
@@ -113,8 +149,13 @@ def fit_var_model(
 ) -> VARModel:
     input_matrices = []
     target_matrices = []
+    sequences = [
+        sequence.detach().cpu().to(dtype=torch.float64)
+        for sequence in sequences
+    ]
+    mean, scale = sequence_mean_and_scale(torch.concat(sequences, dim=0))
     for sequence in sequences:
-        sequence = sequence.detach().cpu().to(dtype=torch.float64)
+        sequence = normalize_sequence(sequence, mean, scale)
         inputs, targets = build_var_training_matrices(
             sequence=sequence,
             lag_order=lag_order,
@@ -134,6 +175,8 @@ def fit_var_model(
     return VARModel(
         coefficients=coefficients,
         intercept=intercept,
+        mean=mean,
+        scale=scale,
         lag_order=lag_order,
     )
 
