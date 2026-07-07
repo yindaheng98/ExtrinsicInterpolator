@@ -4,24 +4,27 @@ import torch
 from gaussian_splatting.prepare import prepare_dataset
 
 from ..abc import Extrinsic
-from ..interpolator.interp import smooth_interpolation
+from ..interpolator.interp import smooth_interpolation, sort_cameras
 from .extrinsic import draw_geometries, plot_extrinsics
 
 
-def prepare_visualization(
+def prepare_interpolation_visualization(
         source: str, device: str, n: int, window_size: int,
         trainable_camera: bool = False, load_camera: str = None
 ) -> tuple[List[Extrinsic], List[Extrinsic]]:
     dataset = prepare_dataset(source=source, device=device, trainable_camera=trainable_camera, load_camera=load_camera, load_depth=False)
-    inputs = [Extrinsic.from_camera(dataset[idx]) for idx in range(len(dataset))]
+    inputs = sort_cameras([
+        Extrinsic.from_camera(dataset[idx])
+        for idx in range(len(dataset))
+    ])
     outputs = smooth_interpolation(dataset=dataset, n=n, window_size=window_size)
     return inputs, outputs
 
 
-def visualize(inputs: List[Extrinsic], outputs: List[Extrinsic]) -> None:
+def visualize_interpolation(inputs: List[Extrinsic], outputs: List[Extrinsic]) -> None:
     geometries = (
-        plot_extrinsics(outputs, 0.25, line_color=(0.0, 0.35, 1.0), name="outputs") +
-        plot_extrinsics(inputs, 0.5, line_color=(0.0, 0.0, 0.0), name="inputs")
+        plot_extrinsics(outputs, 0.25, line_color=(0.0, 0.35, 1.0), name="interpolation outputs") +
+        plot_extrinsics(inputs, 0.5, line_color=(0.0, 0.0, 0.0), name="interpolation inputs")
     )
     draw_geometries(geometries, title="Extrinsic Interpolation Visualizer")
 
@@ -37,10 +40,10 @@ if __name__ == "__main__":
     parser.add_argument("--interp_window_size", type=int, default=3)
     args = parser.parse_args()
     with torch.no_grad():
-        inputs, outputs = prepare_visualization(
+        inputs, outputs = prepare_interpolation_visualization(
             source=args.source, device=args.device,
             n=args.interp_n, window_size=args.interp_window_size,
             trainable_camera=args.mode == "camera",
             load_camera=args.load_camera,
         )
-        visualize(inputs, outputs)
+        visualize_interpolation(inputs, outputs)
