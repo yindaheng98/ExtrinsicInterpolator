@@ -1,12 +1,11 @@
 from typing import List, Sequence
 
-import open3d as o3d
 import torch
 from gaussian_splatting.prepare import prepare_dataset
 
 from ..abc import Extrinsic
 from ..interpolator.interp import smooth_interpolation
-from .extrinsic import plot_extrinsics
+from .extrinsic import draw_geometries, plot_extrinsics
 
 
 def prepare_visualization(
@@ -20,8 +19,11 @@ def prepare_visualization(
 
 
 def visualize(inputs: List[Extrinsic], outputs: List[Extrinsic]) -> None:
-    geometries = plot_extrinsics(outputs, 0.25, line_color=(0.0, 0.35, 1.0)) + plot_extrinsics(inputs, 0.5, line_color=(0.0, 0.0, 0.0))
-    o3d.visualization.draw_geometries(geometries)
+    geometries = (
+        plot_extrinsics(outputs, 0.25, line_color=(0.0, 0.35, 1.0), name="outputs") +
+        plot_extrinsics(inputs, 0.5, line_color=(0.0, 0.0, 0.0), name="inputs")
+    )
+    draw_geometries(geometries, title="Extrinsic Interpolation Visualizer")
 
 
 if __name__ == "__main__":
