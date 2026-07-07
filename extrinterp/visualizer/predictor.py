@@ -4,7 +4,7 @@ import torch
 from gaussian_splatting.prepare import prepare_dataset
 
 from ..predictor.abc import AbstractExtrinsicPredictor
-from ..predictor.angular import ConstantAngularAccelerationExtrinsicPredictor
+from ..predictor.builder import build_predictor
 from ..abc import Extrinsic
 from ..interpolator.interp import sort_cameras
 from .extrinsic import draw_geometries, plot_extrinsics
@@ -50,10 +50,11 @@ if __name__ == "__main__":
     parser.add_argument("--load_camera", default=None, type=str)
     parser.add_argument("--mode", choices=["base", "camera"], default="base")
     parser.add_argument("--device", default="cuda", type=str)
+    parser.add_argument("--predictor", choices=["angular", "kalman", "var"], default="angular")
+    parser.add_argument("--predictor_path", default=None, type=str)
+    parser.add_argument("-o", "--option", action="append", default=[])
     parser.add_argument("--update_interval", required=True, type=int)
     parser.add_argument("--predict_n", required=True, type=int)
-    parser.add_argument("--integration_step", type=float, default=0.01)
-    parser.add_argument("--smoothing_window", type=int, default=30)
     args = parser.parse_args()
     with torch.no_grad():
         dataset = prepare_dataset(
@@ -67,10 +68,12 @@ if __name__ == "__main__":
             Extrinsic.from_camera(dataset[idx])
             for idx in range(len(dataset))
         ])
+        configs = {o.split("=", 1)[0]: eval(o.split("=", 1)[1]) for o in args.option}
         groundtruth, branches = prepare_prediction_visualization(
-            predictor=ConstantAngularAccelerationExtrinsicPredictor(
-                integration_step=args.integration_step,
-                smoothing_window=args.smoothing_window,
+            predictor=build_predictor(
+                name=args.predictor,
+                path=args.predictor_path,
+                **configs,
             ),
             groundtruth=groundtruth,
             update_interval=args.update_interval,
