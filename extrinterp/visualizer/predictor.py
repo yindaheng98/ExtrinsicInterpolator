@@ -3,21 +3,20 @@ from typing import List, Sequence
 import torch
 from gaussian_splatting.prepare import prepare_dataset
 
-from ..predictor.abc import AbstractTrainableExtrinsicPredictor
-from ..predictor.var import VARExtrinsicPredictor
+from ..predictor.abc import AbstractExtrinsicPredictor
+from ..predictor.angular import ConstantAngularAccelerationExtrinsicPredictor
 from ..abc import Extrinsic
 from ..interpolator.interp import sort_cameras
 from .extrinsic import draw_geometries, plot_extrinsics
 
 
 def prepare_prediction_visualization(
-        predictor: AbstractTrainableExtrinsicPredictor,
+        predictor: AbstractExtrinsicPredictor,
         groundtruth: Sequence[Extrinsic],
         update_interval: int,
         predict_n: int
 ) -> tuple[List[Extrinsic], List[List[Extrinsic]]]:
     groundtruth = list(groundtruth)
-    predictor.train([groundtruth])
     predictor.reset()
     branches = []
     for idx, extrinsic in enumerate(groundtruth):
@@ -53,6 +52,8 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cuda", type=str)
     parser.add_argument("--update_interval", required=True, type=int)
     parser.add_argument("--predict_n", required=True, type=int)
+    parser.add_argument("--integration_step", type=float, default=0.01)
+    parser.add_argument("--smoothing_window", type=int, default=30)
     args = parser.parse_args()
     with torch.no_grad():
         dataset = prepare_dataset(
@@ -67,7 +68,10 @@ if __name__ == "__main__":
             for idx in range(len(dataset))
         ])
         groundtruth, branches = prepare_prediction_visualization(
-            predictor=VARExtrinsicPredictor(),
+            predictor=ConstantAngularAccelerationExtrinsicPredictor(
+                integration_step=args.integration_step,
+                smoothing_window=args.smoothing_window,
+            ),
             groundtruth=groundtruth,
             update_interval=args.update_interval,
             predict_n=args.predict_n,
