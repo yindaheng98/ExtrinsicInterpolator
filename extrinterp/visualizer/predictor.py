@@ -3,19 +3,21 @@ from typing import List, Sequence
 import torch
 from gaussian_splatting.prepare import prepare_dataset
 
-from ..predictor.abc import AbstractExtrinsicPredictor
-from ..predictor.kalman import KalmanExtrinsicPredictor
+from ..predictor.abc import AbstractTrainableExtrinsicPredictor
+from ..predictor.var import VARExtrinsicPredictor
 from ..abc import Extrinsic
 from ..interpolator.interp import sort_cameras
 from .extrinsic import draw_geometries, plot_extrinsics
 
 
 def prepare_prediction_visualization(
-        predictor: AbstractExtrinsicPredictor,
+        predictor: AbstractTrainableExtrinsicPredictor,
         groundtruth: Sequence[Extrinsic],
         update_interval: int,
         predict_n: int
 ) -> tuple[List[Extrinsic], List[List[Extrinsic]]]:
+    groundtruth = list(groundtruth)
+    predictor.train([groundtruth])
     predictor.reset()
     branches = []
     for idx, extrinsic in enumerate(groundtruth):
@@ -65,7 +67,7 @@ if __name__ == "__main__":
             for idx in range(len(dataset))
         ])
         groundtruth, branches = prepare_prediction_visualization(
-            predictor=KalmanExtrinsicPredictor(),
+            predictor=VARExtrinsicPredictor(),
             groundtruth=groundtruth,
             update_interval=args.update_interval,
             predict_n=args.predict_n,
