@@ -1,3 +1,3 @@
 from .abc import Extrinsic, ExtrinsicDataset, Extrinsic2CameraDataset
 from .interpolator import ExtrinsicInterpolator, ExtrinsicInterpolationDataset
-from .predictor import AbstractExtrinsicPredictor, AbstractTrainableExtrinsicPredictor, KalmanExtrinsicPredictor, VARExtrinsicPredictor
+from .predictor import AbstractExtrinsicPredictor, AbstractTrainableExtrinsicPredictor, ConstantAngularAccelerationExtrinsicPredictor, KalmanExtrinsicPredictor, VARExtrinsicPredictor

@@ -1,3 +1,4 @@
 from .abc import AbstractExtrinsicPredictor, AbstractTrainableExtrinsicPredictor
+from .angular import ConstantAngularAccelerationExtrinsicPredictor
 from .kalman import KalmanExtrinsicPredictor
 from .var import VARExtrinsicPredictor
