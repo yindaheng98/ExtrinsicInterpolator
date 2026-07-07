@@ -12,9 +12,14 @@ def plot_extrinsic(
     axis_length: float = 1.0,
 ):
     """Build one extrinsic coordinate frame and camera marker."""
+    rotation = extrinsic.R.detach().cpu().to(dtype=torch.float64)
+    translation = extrinsic.T.detach().cpu().reshape(-1)[:3].to(dtype=torch.float64)
+    camera_to_world = rotation.T
+    camera_center = -camera_to_world @ translation
+
     transform = torch.eye(4, dtype=torch.float64)
-    transform[:3, :3] = extrinsic.R.detach().cpu().to(dtype=torch.float64)
-    transform[:3, 3] = extrinsic.T.detach().cpu().reshape(-1)[:3].to(dtype=torch.float64)
+    transform[:3, :3] = camera_to_world
+    transform[:3, 3] = camera_center
 
     mesh = o3d.geometry.TriangleMesh()
     frame = o3d.geometry.TriangleMesh.create_coordinate_frame(size=axis_length)
@@ -73,7 +78,7 @@ def plot_extrinsics(
     """Build Open3D geometries for multiple extrinsics and their trajectory."""
     extrinsics = list(extrinsics)
     positions = torch.stack([
-        extrinsic.T.detach().cpu().reshape(-1)[:3]
+        -extrinsic.R.detach().cpu().to(dtype=torch.float64).T @ extrinsic.T.detach().cpu().reshape(-1)[:3].to(dtype=torch.float64)
         for extrinsic in extrinsics
     ]).to(dtype=torch.float64)
     ranges = positions.max(dim=0).values - positions.min(dim=0).values
