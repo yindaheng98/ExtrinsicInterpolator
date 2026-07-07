@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "extrinterp"
-version = "2.2.0"
+version = "2.2.1"
 description = "Just a simple camera interpolator for Gaussian Splatting framework."
 readme = "README.md"
 license = { file = "LICENSE" }
