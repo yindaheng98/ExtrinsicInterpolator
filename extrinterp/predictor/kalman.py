@@ -20,6 +20,13 @@ class KalmanExtrinsicPredictor(AbstractExtrinsicPredictor):
         self.state: Optional[torch.Tensor] = None
         self.covariance: Optional[torch.Tensor] = None
 
+    def to(self, device) -> 'KalmanExtrinsicPredictor':
+        if self.state is not None:
+            self.state = self.state.to(device)
+        if self.covariance is not None:
+            self.covariance = self.covariance.to(device)
+        return self
+
     def reset(self) -> None:
         self.state = None
         self.covariance = None

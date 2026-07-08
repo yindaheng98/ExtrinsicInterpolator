@@ -127,11 +127,18 @@ class VARModel:
         self.scale = scale
         self.k_ar = lag_order
 
-    def forecast(self, data, steps: int):
-        history = torch.as_tensor(data, dtype=self.coefficients.dtype)
+    def to(self, device) -> 'VARModel':
+        self.coefficients = self.coefficients.to(device)
+        self.intercept = self.intercept.to(device)
+        self.mean = self.mean.to(device)
+        self.scale = self.scale.to(device)
+        return self
+
+    def forecast_tensor(self, data, steps: int) -> torch.Tensor:
+        history = torch.as_tensor(data, dtype=self.coefficients.dtype).to(self.coefficients.device)
         assert history.ndim == 2, ValueError("VAR history must be a 2D tensor or array.")
         assert history.shape[1] == self.intercept.shape[0], ValueError("VAR history feature count is invalid.")
-        predictions = forecast_var_sequence(
+        return forecast_var_sequence(
             history=history,
             coefficients=self.coefficients,
             intercept=self.intercept,
@@ -140,17 +147,21 @@ class VARModel:
             steps=steps,
             lag_order=self.k_ar,
         )
-        return predictions.detach().cpu().numpy()
+
+    def forecast(self, data, steps: int):
+        return self.forecast_tensor(data, steps).detach().cpu().numpy()
 
 
 def fit_var_model(
     sequences: List[torch.Tensor],
     lag_order: int,
+    device=None,
 ) -> VARModel:
     input_matrices = []
     target_matrices = []
     sequences = [
-        sequence.detach().cpu().to(dtype=torch.float64)
+        sequence.detach().to(dtype=torch.float64) if device is None
+        else sequence.detach().to(device=device, dtype=torch.float64)
         for sequence in sequences
     ]
     mean, scale = sequence_mean_and_scale(torch.concat(sequences, dim=0))
@@ -189,6 +200,17 @@ class VARExtrinsicPredictor(AbstractTrainableExtrinsicPredictor):
         self.model = None
         self.lag_order = lag_order
         self.history: List[Extrinsic] = []
+        self.device = None
+
+    def to(self, device) -> 'VARExtrinsicPredictor':
+        self.device = torch.device(device)
+        if self.model is not None:
+            self.model.to(device)
+        self.history = [
+            extrinsic.to(device)
+            for extrinsic in self.history
+        ]
+        return self
 
     def reset(self) -> None:
         self.history = []
@@ -204,11 +226,8 @@ class VARExtrinsicPredictor(AbstractTrainableExtrinsicPredictor):
             return []
 
         last_extrinsic = self.history[-1]
-        history = extrinsics_to_tensor(self.history[-self.model.k_ar:]).detach().cpu().numpy()
-        predictions = self.model.forecast(history, steps=n)
-        prediction_tensor = torch.tensor(
-            predictions,
-            device=last_extrinsic.R.device,
+        history = extrinsics_to_tensor(self.history[-self.model.k_ar:]).detach()
+        prediction_tensor = self.model.forecast_tensor(history, steps=n).to(
             dtype=last_extrinsic.R.dtype,
         )
         return tensor_to_extrinsics(prediction_tensor)
@@ -218,13 +237,14 @@ class VARExtrinsicPredictor(AbstractTrainableExtrinsicPredictor):
             extrinsics_to_tensor([
                 extrinsic_dataset[i]
                 for i in range(len(extrinsic_dataset))
-            ]).detach().cpu()
+            ]).detach()
             for extrinsic_dataset in dataset
         ]
 
         self.model = fit_var_model(
             sequences=sequences,
             lag_order=self.lag_order,
+            device=self.device,
         )
 
     def save(self, path: str) -> None:
@@ -236,3 +256,4 @@ class VARExtrinsicPredictor(AbstractTrainableExtrinsicPredictor):
         with open(path, "rb") as file:
             self.model = pickle.load(file)
         self.lag_order = self.model.k_ar
+        self.model.to(self.device)

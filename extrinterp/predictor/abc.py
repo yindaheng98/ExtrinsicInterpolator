@@ -6,6 +6,10 @@ from ..abc import Extrinsic, ExtrinsicDataset
 
 class AbstractExtrinsicPredictor(ABC):
     @abstractmethod
+    def to(self, device) -> 'AbstractExtrinsicPredictor':
+        raise NotImplementedError
+
+    @abstractmethod
     def reset(self) -> None:
         raise NotImplementedError
 

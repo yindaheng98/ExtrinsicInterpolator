@@ -168,6 +168,13 @@ class ConstantAngularAccelerationExtrinsicPredictor(AbstractExtrinsicPredictor):
         self.low_speed_horizon = low_speed_horizon
         self.history: List[Extrinsic] = []
 
+    def to(self, device) -> 'ConstantAngularAccelerationExtrinsicPredictor':
+        self.history = [
+            extrinsic.to(device)
+            for extrinsic in self.history
+        ]
+        return self
+
     def reset(self) -> None:
         self.history = []
 
